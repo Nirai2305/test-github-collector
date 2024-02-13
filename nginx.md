@@ -1,6 +1,8 @@
-## The Apiconnect opentelemetry collector supports when the nginx is configured in any of the below ways
+# Nginx configuration for Opentelemetry Collector in Api Discovery
 
-Pre-req: Ensure nginx is installed 
+The Apiconnect opentelemetry collector supports when the nginx is configured in any of the below ways
+
+**Pre-req:** Ensure nginx is installed 
 
 ### 1. Using otel-webserver-module
 https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/otel-webserver-module
