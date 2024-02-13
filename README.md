@@ -37,7 +37,7 @@ Run the following command to deploy the collector
 ```
 helm template . | kubectl apply -f -
 ```
-Output should be as follows which indicate that the required Kubernetes Reources have been deployed  
+Output should be as follows which indicate that the required Kubernetes Reources have been deployed where telemetry creation is only for Istio
 
 ```
 helm template . | kubectl apply -f -
@@ -47,7 +47,7 @@ deployment.apps/management-api-discovery-otel-collector created
 telemetry.telemetry.istio.io/api-discovery-otel created
 ```
 
-Once the collector has been deployed any istio instructmented pods which have traffic running through envoy will begin to be discovered and sent to the apiconnect discovery service.  
+Once the collector has been deployed any istio or nginx instructmented pods which have traffic running through envoy will begin to be discovered and sent to the apiconnect discovery service.  
 
 ## Uninstalling the collector
 
