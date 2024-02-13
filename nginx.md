@@ -21,6 +21,8 @@ Or you can alternatively use NginxModuleOtelExporterEndpoint in opentelemetry co
 
 The datasource name of the APIs collected through this integration will be named after the attribute NginxModuleServiceName from the opentelemetry conf.
 
+Note: This module will support a custom trace resource in future with the attribute `NginxModuleOtelResourceAttributes some.key=value;` and can be used to set datasource name via `ibm-api-discovery-datasource.name`
+
 Below is an example of nginx config and opentelemetry config when using this module
 
 **Sample nginx-config in a Kubernetes ConfigMap**
@@ -82,6 +84,11 @@ Or you can alternatively configure it in the otel-nginx.toml as in the opentelem
 
 This module helps configuring the nginx.conf to use different variables to customize the traces that can be sent to Discovery service. 
 See here for a full list of [nginx-directives](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/nginx#nginx-directives) configurations which can be set in the nginx config and used to explitly give some trace parameter values.
+opentelemetry_attribute
+
+The datasource name of the APIs collected through this integration will be named after the env OTEL_SERVICE_NAME from the nginx deployment or the service name from the otel-nginx.toml.
+
+Or this module will support a custom trace attribute [opentelemetry_attribute](https://github.com/open-telemetry/opentelemetry-cpp-contrib/tree/main/instrumentation/nginx#opentelemetry_attribute) which can be used to set datasource name via `ibm-api-discovery-datasource.name`
 
 Below is an example of nginx config when using this module
 
@@ -108,14 +115,22 @@ data:
      }
    }
 ```
+### 3. Kubernetes Ingress-nginx controller
 
-### 3. Opentelemetry Native nginx module
-The Opentelemetry Native nginx module can be found at the following location -  https://docs.nginx.com/nginx/admin-guide/dynamic-modules/opentelemetry/
+The Kubernetes Ingress-nginx controller Opentelemetry configuration can be found at the following location -  https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/ and the module used by this ingress controller is the nginx-instrumentation module. Therefore anything configurable in the instrumentation module is also configurable here in a similar way.
+
+At a minimum, the kubernetes ingress-nginx controller ConfigMap needs to be configured with "enable-opentelemetry" (true) and "otlp-collector-host" (management-api-discovery-otel-collector.{namespace}.svc:5555) to collect the traces from the backend service.
+
+### 4. Opentelemetry Native nginx module
+
+The Opentelemetry Native nginx module can be found at the following location - https://docs.nginx.com/nginx/admin-guide/dynamic-modules/opentelemetry/
 
 You can configure this module to send traces to the Opentelemetry collector by setting the otel_exporter in the nginx config.
 
 This module helps configuring the nginx.conf to use different variables to customize the traces that can be sent to Discovery service. 
 See here for a full list of [module-directives](https://docs.nginx.com/nginx/admin-guide/dynamic-modules/opentelemetry/#module-directives) configurations which can be set in the nginx config and used to explitly give some trace parameter values.
+
+The datasource name of the APIs collected through this integration will be named after the attribute [otel_service_name](https://docs.nginx.com/nginx/admin-guide/dynamic-modules/opentelemetry/#otel_service_name) or a custom trace attribute [otel_span_attr](https://docs.nginx.com/nginx/admin-guide/dynamic-modules/opentelemetry/#otel_span_attr) which can be used to set datasource name via `ibm-api-discovery-datasource.name`
 
 Below is an example of nginx config when using this module
 
@@ -148,10 +163,3 @@ data:
       }
     }
 ```
-
-
-### 4. Kubernetes Ingress-nginx controller
-
-The Kubernetes Ingress-nginx controller Opentelemetry configuration can be found at the following location -  https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/
-
-At a minimum, the kubernetes ingress-nginx controller ConfigMap needs to be configured with "enable-opentelemetry" (true) and "otlp-collector-host" (management-api-discovery-otel-collector.{namespace}.svc:5555) to collect the traces from the backend service.
