@@ -1,8 +1,9 @@
 # Opentelemetry Collector For Api Discovery
 
-This document describes the set up details for the OpenTelemetry Collector For Api Discovery based on different modules. 
-## Pre-req: Install anyone of the below to collect traces through the opentelemetry collector
+This document describes the set up details for the OpenTelemetry Collector For Api Discovery based on different datasource types. 
+## Pre-req: Ensure one of the below datasource type is available on your system to collect traces through the opentelemetry collector
 
+Example configurations for both Istio and nginx are provided here
 1. Istio installation details - [Istio-Readme.md](https://github.com/Nirai2305/test-github-collector/blob/main/Istio.md)
 2. nginx Conguration details - [nginx-Readme.md](https://github.com/Nirai2305/test-github-collector/blob/main/nginx.md)
 
