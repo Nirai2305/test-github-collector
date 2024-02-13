@@ -1,3 +1,4 @@
+# Istio installation For Opentelemetry Collector in Api Discovery
 ## Pre-req: Ensure istio is installed on your cluster 
 
 Follow the istio getting started guide if you do not have a cluster with istio already installed.   
