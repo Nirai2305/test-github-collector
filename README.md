@@ -1,29 +1,84 @@
-The Apic Discovery Test repo allows you to test the discovery action from [here](https://github.com/ibm-apiconnect/apic-discovery-action). This is an example repo from where the API documents can be sent to the API connect manager using the discovery action and where they can be promoted as required to be managed by Apiconnect through their entire lifecycle.
+# Opentelemetry Collector For Api Discovery
 
-See [discover-api.yml](.github/workflows/discover-api.yml)
+This document describes the set up details for the Istio based OpenTelemetry Collector For Api Discovery.   
 
-The file has an example of sending the API documents in different ways to the host `d-j02.apiconnect.dev.automation.ibm.com` to the provider organisation name `niraimathi` when the [workflow file](.github/workflows/discover-api.yml) or any one of the mentioned API file content changes.<br /> 
-Different ways of sending the API documents are mentioned in the commented section 
+## Pre-req: Ensure istio is installed on your cluster 
+
+Follow the istio getting started guide if you do not have a cluster with istio already installed.   
+
+Deploy both the istio mesh and the sample application to test with.  
+https://istio.io/latest/docs/setup/getting-started/  
+
+The collector has been tested with `istioctl` version `1.19.x` & `1.20.x`  
+
+## Pre-req: Ensure helm is installed  
+
+See here for details  
+https://helm.sh/docs/intro/install/  
+
+## Configuring Istio and deploying the collector  
+
+### Update the Istio mesh config  
+Firstly a reference to the discovery collector (which will be deployed in the suqsequent steps) will need to be registered in the istio MeshConfig to send trace data to the discovery service.  
+See the Provider Selection section for some details: https://istio.io/latest/docs/tasks/observability/telemetry/#provider-selection    
+There is an example of the patch that will need to be configured on the mesh in the [apidiscovery/patches](apidiscovery/patches) directory.   
+This is a complete example of what the `istio` configmap could look like but the salient lines from the example which need to be added to your own configuration under extensionProviders are the following   
 ```
-API_FILES: gmail-api.json
-API_FILES: gmail-api.json,mit-api.json,gmail-api.yaml,APIfolder/uber-api.json
-API_FOLDERS: APIfolder
-API_FOLDERS: APIfolder,APIfolderTwo
+    extensionProviders:
+      - name: "discoveryOtelCollector"
+        opentelemetry:
+          service: "management-api-discovery-otel-collector.istio-system.svc.cluster.local"
+          port: 5555
 ```
-The job `check_changes_job` checks for the changes in the workflow file or mentioned API document and the job `run-discovery` sends the documents mentioned.<br /> 
-The `run-discovery` job uses the apic-discovery-action repo main branch in the ibm-apiconnect organization
- - uses: ibm-apiconnect/apic-discovery-action@main <br /> 
-with the parameters supplied
+These can be added by doing an edit on the `istio` configmap which will be in the namespace where istio is deployed.  
 ```
-with:
-  api_host: ${{ env.API_HOST }}
-  provider_org: ${{ env.PROVIDER_ORG }}
-  api_key: ${{ secrets.apicApikey }}
-  if: env.API_FILES
-  api_files: ${{ env.API_FILES }}
-  else if: env.API_FOLDERS
-  api_folders: ${{ env.API_FOLDERS }}
-  resync_check: ${{ needs.check_changes_job.outputs.action_changed && true || false }}
+e.g.
+kubectl edit configmap istio -n <istio-system>
+```
+Or if you have deployed istio via the IstioOperator you can configure the same via the MeshConfig  
+See here for more details: https://istio.io/v1.10/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig  
+
+### Use the Helm chart to deploy the collector.  
+
+### Use the Helm chart to deploy the collector.  
+
+In the helm directory, update the [values.yaml](apidiscovery/values.yaml) file based on your apiconnect provider org, authentication and istio set up  
+
+The following parameters require updates:  
+
+ - `discovery.datasource_name` - Optional field to set the datasource name for all APIs discovered by the collector. If datasource name is empty, the namespace of the collected API will be used.  
+ - `discovery.apic_host_domain` - Domain name of the ApiConnect instance where discovered APIs will be sent.<br /> &nbsp; Example : `us-east-a.apiconnect.automation.ibm.com`  
+ - `discovery.provider_org` - The provider org name of the apiconnect manager  
+ - `discovery.apikey` - An API Key can be obtained from the api-manager for the user who has permission to create an API.  
+&nbsp; Get the API key from the APIC Manager using a link of the following structure - `http://{api-host}/manager/auth/manager/sign-in/?from=TOOLKIT` (typically used with an OIDC user registry like IBM Verify). 
+The apikey will be added to a kubernetes secret as part of the deployment and then mounted on the collector deployment pod.  
+- `istio_namespace`: The namespace where istio has been deployed on your cluster. As required by istio's telemetry integration the collector pod will be deployed here.      
+- `telemetry_namespace`: This is where the istio Telemetry CR will be deployed. By default the values file sets this to `istio-system` as the root configuration namespace to provide mesh level collection configuration. This can be customized as you wish based on your collection requirements regarding the deployed applications you want to be discovered. See here for further details https://istio.io/latest/docs/reference/config/telemetry/.  
+- `images.api_discovery_collector`: As new versions of the collectors are released updating this property will enable the upgrade of the collector deployment. Note: collectors will require updates to ensure they remain compatible with the discovery service. Details of these updates will be available in this repository.
+- `logging.log_level`: Default log_level is `info`. For debug purposes the log level can be increased to debug if needed.  
+
+Once you have made the required updates to the values.yaml file you can deploy the collector.  
+
+Run the following command to deploy the collector  
+```
+helm template . | kubectl apply -f -
+```
+Output should be as follows which indicate that the required Kubernetes Reources have been deployed  
+
+```
+helm template . | kubectl apply -f -
+secret/api-discovery-secret created
+service/management-api-discovery-otel-collector created
+deployment.apps/management-api-discovery-otel-collector created
+telemetry.telemetry.istio.io/api-discovery-otel created
 ```
 
-The content can be modified according to the test requirement for sending the APIs
+Once the collector has been deployed any istio instructmented pods which have traffic running through envoy will begin to be discovered and sent to the apiconnect discovery service.  
+
+## Uninstalling the collector
+
+The collector can be uninstalled using the following comman.  
+
+```
+helm template . | kubectl delete -f -
+```
