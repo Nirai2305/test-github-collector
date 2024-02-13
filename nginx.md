@@ -156,3 +156,8 @@ data:
      }
    }
 ```
+
+### 3. Using Ingress-nginx controller
+The configMap need to be configured with enable-opentelemetry (true) and otlp-collector-host to collect the traces from the backend service
+https://kubernetes.github.io/ingress-nginx/user-guide/third-party-addons/opentelemetry/
+
