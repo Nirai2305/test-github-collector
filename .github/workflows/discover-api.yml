@@ -1,37 +1,33 @@
-name: Sync Discovered API with ApiConnect
+name: Send Discovered API to ApiConnect 
 
 on: [pull_request, workflow_dispatch, push]
 
 env:
-  API_HOST: d-j02.apiconnect.dev.automation.ibm.com
-  PROVIDER_ORG: niraimathi
-  API_FILES: gmail-api.json,mit-api.json,gmail-api.yaml,APIfolder/uber-api.json
+  API_HOST: fyre-ci-180762-master.fyre.ibm.com
+  PROVIDER_ORG: test-pOrg-two-mocha
+  API_FILES: APIfolder/docusign-developer-centre.yaml
+  #API_FOLDERS: APIfolder,APIfolderTwo
 
 jobs:
   run-discovery:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-      with:
-        fetch-depth: 2
     - name: Difference
       id: difference-output
       run: |
         echo "action_updates=$(git diff --name-only --diff-filter=ACMRT ${{ github.event.before }} ${{ github.sha }} | xargs)" >> $GITHUB_OUTPUT
-    - uses: ibm-apiconnect/apic-discovery-action@ng/main
+    - uses: ibm-apiconnect/apic-discovery-action@main
       id: discover-apis
       with:
         api_host: ${{ env.API_HOST }}
         provider_org: ${{ env.PROVIDER_ORG }}
         api_key: ${{ secrets.apicApikey }}
-        if: env.API_FILES
         api_files: ${{ env.API_FILES }}
-        else if: env.API_FOLDERS
         api_folders: ${{ env.API_FOLDERS }}
         resync_check: ${{ true }}
         git_diff: ${{ steps.difference-output.outputs.action_updates }}
     - name: Display the action-result
       run: |
         echo "Result of the action: ${{ steps.discover-apis.outputs.action-result }}"
-        echo "End"          
-
+        echo "End"  
